@@ -1,0 +1,73 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppass}
+      POSTGRES_DB: ${POSTGRES_DB:-marketview}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-appuser} -d ${POSTGRES_DB:-marketview}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth_service:
+    build: ./auth_service
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-auth}
+      AUTH_DB_URL: ${AUTH_DB_URL:-postgresql+psycopg2://appuser:apppass@db:5432/marketview}
+    depends_on:
+      - db
+    ports:
+      - "5001:5001"
+
+  data_service:
+    build: ./data_service
+    environment:
+      DATA_DB_URL: ${DATA_DB_URL:-postgresql+psycopg2://appuser:apppass@db:5432/marketview}
+    depends_on:
+      - db
+    ports:
+      - "5002:5002"
+
+  viz_service:
+    build: ./viz_service
+    environment:
+      VIZ_DB_URL: ${VIZ_DB_URL:-postgresql+psycopg2://appuser:apppass@db:5432/marketview}
+    depends_on:
+      - db
+    ports:
+      - "5003:5003"
+
+  gateway:
+    build: ./gateway
+    environment:
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth_service:5001}
+      DATA_SERVICE_URL: ${DATA_SERVICE_URL:-http://data_service:5002}
+      VIZ_SERVICE_URL: ${VIZ_SERVICE_URL:-http://viz_service:5003}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      GATEWAY_PORT: ${GATEWAY_PORT:-8080}
+    depends_on:
+      - auth_service
+      - data_service
+      - viz_service
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
+
+volumes:
+  db_data:

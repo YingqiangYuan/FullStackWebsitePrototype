@@ -2,7 +2,6 @@
 
 ## Overview
 This project demonstrates a production-minded, containerized full-stack system designed using modern enterprise architecture principles. The system is composed of multiple independently deployable services, orchestrated using Docker Compose, and communicates through well-defined HTTP/JSON APIs.
-
 The goal of this project is to showcase scalable system design, clean service boundaries, secure authentication, and cloud-ready deployment practices.
 
 ---
@@ -55,6 +54,22 @@ Docker Compose is used to:
 - Inject environment variables
 
 This setup mirrors real-world cloud deployments and prepares the system for Kubernetes-based scaling.
+
+---
+
+## Why Microservices for This System
+
+This system is intentionally designed using a microservices architecture because its responsibilities naturally decompose into independent, well-defined domains that benefit from isolation, scalability, and flexibility.
+
+Authentication, data access, visualization, and request orchestration are fundamentally different concerns. By separating them into auth_service, data_service, viz_service, and a centralized gateway, each component can evolve independently without introducing unnecessary coupling or risk to the rest of the system. This mirrors how real-world enterprise systems are structured and maintained.
+
+Microservices also enable independent scaling. For example, visualization and data processing may be CPU-intensive, while authentication is lightweight but requires high availability. A monolithic design would force the entire application to scale uniformly, whereas microservices allow scaling only the components that need it, improving efficiency and cost control.
+
+From a reliability perspective, service isolation improves fault tolerance. A failure in the visualization service does not compromise authentication or core data access. Combined with Docker-based deployment, this enables safer updates, faster iteration, and reduced blast radius during failures.
+
+The architecture also supports incremental technology evolution. Because services communicate via HTTP/JSON APIs, individual components can be rewritten or upgraded—for example, migrating the gateway to Node.js or backend services to Spring Boot—without impacting the frontend or other services. This is a key advantage in enterprise environments where technology stacks evolve over time.
+
+Overall, microservices are the appropriate choice here because they align with the system’s domain boundaries, improve scalability and reliability, support modern DevOps practices, and future-proof the architecture for growth and change.
 
 ---
 
